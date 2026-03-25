@@ -1,4 +1,4 @@
-# Real-Time Motion Detection (RTMD) 🚀
+# Real-Time Motion Detection (RTMD) 
 
 **Real-time human action recognition web app** built with Flask, Detectron2, LSTM, and YOLOv8.
 
