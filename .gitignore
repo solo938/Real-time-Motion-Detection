@@ -1,0 +1,34 @@
+# Virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs and temporary data
+lightning_logs/
+uploads/
+*.log
+
+# Large model files (YOLO, etc.)
+*.pt
+*.onnx
+*.pth
+
+# OS-specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables (if you add any later)
+.env
+
+# Jupyter / VS Code
+.ipynb_checkpoints/
+.vscode/
