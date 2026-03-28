@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
 
-WINDOW_SIZE = 32
+WINDOW_SIZE = 16   
 NUM_CLASSES = 6
 openpose_to_detectron_mapping = []
 
