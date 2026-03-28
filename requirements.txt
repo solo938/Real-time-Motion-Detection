@@ -3,7 +3,7 @@ torchvision
 opencv-python>=4.13.0
 numpy
 pillow
-detectron2
+mediapipe
 Flask
 Flask-Bootstrap
 Flask-Uploads
@@ -14,7 +14,7 @@ timm
 tqdm
 torchreid>=0.2.5
 scipy
-scikitlearn
+scikit-learn
 tensorflow
 ultralytics
 
