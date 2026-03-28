@@ -47,7 +47,7 @@ OPENPOSE_TO_COCO = [
     10,  # COCO 16 r_ankle   ← OP 10
 ]
 
-TARGET_FRAMES = 32   # your LSTM window size
+TARGET_FRAMES = 16
 
 
 def remap_and_normalise(sample_frames: np.ndarray) -> np.ndarray:
@@ -183,7 +183,7 @@ def main():
         write_flat(
             X_arr, Y_arr,
             out_dir / f"X_{split_name}.txt",
-            out_dir / f"y_{split_name}.txt",   # changed to lowercase y_ to match training script
+            out_dir / f"y_{split_name}.txt",   
         )
 
     print(f"\nDone. Files saved to: {out_dir}/")
