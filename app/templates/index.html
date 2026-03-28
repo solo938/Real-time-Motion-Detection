@@ -2,308 +2,215 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>RTMD</title>
+<title>RTMD — Real Time Motion Detection</title>
 <style>
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{background:#0a0a0f;color:#d0d0e8;font-family:'Courier New',monospace;height:100vh;display:flex;flex-direction:column}
-  header{padding:14px 24px;background:#0d0d18;border-bottom:1px solid #1a1a35;display:flex;align-items:center;justify-content:space-between}
-  header h1{font-size:1rem;letter-spacing:3px;color:#00e5ff;text-transform:uppercase}
-  #pill{font-size:.7rem;padding:4px 12px;border-radius:99px;background:#1a1a35;color:#556;letter-spacing:2px;transition:all .3s}
-  #pill.active{background:#0d2a0d;color:#00ff9d}
-  #pill.error{background:#2a0d0d;color:#ff4444}
-  main{flex:1;display:flex;gap:16px;padding:16px;overflow:hidden}
-  #feed{flex:3;position:relative;background:#05050d;border:1px solid #1a1a35;border-radius:10px;overflow:hidden;display:flex;align-items:center;justify-content:center}
-  #webcam{display:none}
-  #cv,#co{position:absolute;top:0;left:0;width:100%;height:100%}
-  #omsg{position:absolute;text-align:center;color:#334;font-size:.85rem;letter-spacing:2px;pointer-events:none;z-index:10}
-  #sb{flex:1;display:flex;flex-direction:column;gap:10px;min-width:230px;overflow-y:auto}
-  .panel{background:#0d0d18;border:1px solid #1a1a35;border-radius:10px;padding:12px}
-  .panel h2{font-size:.6rem;letter-spacing:3px;color:#445580;text-transform:uppercase;margin-bottom:8px}
-  #bs,#ss{width:100%;padding:9px;border:none;border-radius:6px;font-family:inherit;font-size:.8rem;letter-spacing:2px;cursor:pointer;text-transform:uppercase}
-  #bs{background:linear-gradient(135deg,#00e5ff,#00ff9d);color:#000;margin-bottom:7px}
-  #ss{background:#1a1a35;color:#556}
-  #ss.live{color:#ff4444;border:1px solid #ff444433}
-  label{font-size:.68rem;color:#445580;display:block;margin:8px 0 3px}
-  input[type=range]{width:100%;accent-color:#00e5ff}
-  .v{float:right;color:#00e5ff}
-  .tog{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:.68rem;color:#445580}
-  /* person rows */
-  .person-row{padding:8px;border-radius:6px;margin-bottom:5px;background:#0f0f25;border-left:3px solid #7f77dd}
-  .person-row .pname{font-size:.78rem;color:#cce;font-weight:bold}
-  .person-row .paction{font-size:.85rem;color:#00ff9d;margin:3px 0}
-  .person-row .pmeta{font-size:.65rem;color:#445580}
-  /* object rows */
-  .obj-row{display:flex;justify-content:space-between;align-items:center;padding:6px 7px;border-radius:5px;margin-bottom:4px;background:#12122a;font-size:.73rem;border-left:3px solid #00e5ff33}
-  .obj-row.fresh{border-left-color:#00ff9d}
-  .oname{color:#aab;text-transform:capitalize;flex:1}
-  .odur{color:#00ff9d;font-size:.7rem;min-width:40px;text-align:right}
-  .oz{color:#00e5ff;font-size:.63rem;min-width:44px;text-align:right}
-  /* stat */
-  .sr{display:flex;justify-content:space-between;font-size:.7rem;padding:3px 0;border-bottom:1px solid #1a1a2a}
-  .sr:last-child{border:none}
-  .sl{color:#445580}.sv{color:#00e5ff}
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#0a0a0f; color:#d0d0e8; font-family:'Courier New',monospace; height:100vh; display:flex; flex-direction:column; }
+  header { padding:12px 24px; background:#0d0d18; border-bottom:1px solid #1a1a35; display:flex; align-items:center; justify-content:space-between; }
+  header h1 { font-size:0.95rem; letter-spacing:3px; color:#00e5ff; text-transform:uppercase; }
+  #status-pill { font-size:0.7rem; padding:4px 12px; border-radius:99px; background:#1a1a35; color:#556; letter-spacing:2px; transition:all 0.3s; }
+  #status-pill.active { background:#0d2a0d; color:#00ff9d; }
+  #status-pill.error  { background:#2a0d0d; color:#ff4444; }
+  main { flex:1; display:flex; gap:14px; padding:14px; overflow:hidden; }
+  #feed-panel { flex:3; position:relative; background:#05050d; border:1px solid #1a1a35; border-radius:10px; overflow:hidden; display:flex; align-items:center; justify-content:center; }
+  #webcam { display:none; }
+  #canvas { width:100%; height:100%; object-fit:contain; display:block; }
+  #overlay-msg { position:absolute; text-align:center; color:#334; font-size:0.85rem; letter-spacing:2px; pointer-events:none; }
+  #fps-counter { font-size:0.65rem; color:#334; position:absolute; bottom:8px; right:10px; }
+  #motion-flash { position:absolute; inset:0; border-radius:10px; border:3px solid transparent; pointer-events:none; transition:border-color 0.15s; }
+  #motion-flash.active { border-color:#ff440099; }
+  #sidebar { flex:1; display:flex; flex-direction:column; gap:10px; min-width:230px; max-width:260px; overflow-y:auto; }
+  .panel { background:#0d0d18; border:1px solid #1a1a35; border-radius:10px; padding:12px; }
+  .panel h2 { font-size:0.62rem; letter-spacing:3px; color:#445580; text-transform:uppercase; margin-bottom:10px; }
+  #btn-start, #btn-stop { width:100%; padding:9px; border:none; border-radius:6px; font-family:inherit; font-size:0.78rem; letter-spacing:2px; cursor:pointer; text-transform:uppercase; transition:opacity 0.2s; }
+  #btn-start { background:linear-gradient(135deg,#00e5ff,#00ff9d); color:#000; margin-bottom:6px; }
+  #btn-stop  { background:#1a1a35; color:#556; }
+  #btn-stop.live { color:#ff4444; border:1px solid #ff444433; }
+  label { font-size:0.68rem; color:#445580; letter-spacing:1px; display:block; margin:8px 0 3px; }
+  input[type=range] { width:100%; accent-color:#00e5ff; }
+  #interval-val { float:right; color:#00e5ff; }
+  #persons-list { display:flex; flex-direction:column; gap:6px; max-height:320px; overflow-y:auto; }
+  .person-card { background:#10102a; border-radius:7px; padding:8px 10px; border-left:3px solid #00e5ff44; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); margin-bottom: 4px; }
+  .person-card.moving { border-left-color:#ff440088; }
+  .person-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; height: 1.2rem;}
+  .person-name { font-size:0.72rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
+  .person-dur  { font-size:0.65rem; color:#445580; }
+  .action-badge { display: inline-block; padding: 2px 12px; border-radius: 99px; font-size: 0.64 rem; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; min-width: 90px; text-align: center; transition: background-color 0.1s ease, color 0.1s ease; }
+  .action-standing   { background:#0d2a1a; color:#00ff9d; }
+  .action-sitting    { background:#1a1a2a; color:#7799ff; }
+  .action-walking    { background:#2a1a0d; color:#ffaa00; }
+  .action-sleeping   { background:#1a0d2a; color:#cc88ff; }
+  .action-using-phone{ background:#2a0d0d; color:#ff4444; }
+  .action-detecting  { background:#111; color:#445580; }
+  .action-other      { background:#111; color:#667788; }
+  .conf-bar-wrap { background:#1a1a35; border-radius:99px; height:3px; margin-top:6px; }
+  .conf-bar { height:3px; border-radius:99px; background:#00e5ff; transition:width 0.4s; }
+  .motion-tag { font-size:0.6rem; color:#ff6600; margin-top:4px; }
+  #motion-list { max-height:110px; overflow-y:auto; scrollbar-width: thin; }
+  .motion-row { font-size:0.67rem; padding:5px 0; border-bottom:1px solid #1a1a2a; color:#667; animation: fadeIn 0.3s ease-out; }
+  .motion-row:last-child { border:none; }
+  .motion-row span { color:#ff7700; font-weight: bold; text-shadow: 0 0 5px rgba(255, 119, 0, 0.3); }
+  @keyframes fadeIn {
+    from {opacity: 0; transform: translateX(-5px);}
+    to {opacity: 1; transform: translateX(0);}
+    
+  }
+  .stat-row { display:flex; justify-content:space-between; font-size:0.7rem; padding:3px 0; border-bottom:1px solid #1a1a2a; }
+  .stat-row:last-child { border:none; }
+  .stat-label { color:#445580; }
+  .stat-val   { color:#00e5ff; }
 </style>
 </head>
 <body>
 <header>
-  <h1>RTMD — Real-Time Motion Detection</h1>
-  <span id="pill">OFFLINE</span>
+  <h1>⬡ RTMD — Real-Time Motion Detection</h1>
+  <span id="status-pill">OFFLINE</span>
 </header>
 <main>
-  <div id="feed">
+  <div id="feed-panel">
     <video id="webcam" autoplay playsinline muted></video>
-    <canvas id="cv"></canvas>
-    <canvas id="co"></canvas>
-    <div id="omsg">Press START to activate webcam</div>
+    <canvas id="canvas"></canvas>
+    <div id="motion-flash"></div>
+    <div id="overlay-msg">Press START to activate webcam</div>
+    <span id="fps-counter"></span>
   </div>
-  <div id="sb">
+  <div id="sidebar">
     <div class="panel">
       <h2>Controls</h2>
-      <button id="bs" onclick="startD()">Start</button>
-      <button id="ss" onclick="stopD()">Stop</button>
-      <label>Threshold <span class="v" id="tv">0.65</span></label>
-      <input type="range" id="thr" min=".1" max=".95" step=".05" value=".65"
-             oninput="document.getElementById('tv').textContent=parseFloat(this.value).toFixed(2)">
-      <label>Send every <span class="v" id="iv">400ms</span></label>
-      <input type="range" id="si" min="200" max="1500" step="100" value="400"
-             oninput="document.getElementById('iv').textContent=this.value+'ms';updI(+this.value)">
-      <div class="tog"><span>Skeleton</span><input type="checkbox" id="showSkel" checked></div>
-      <div class="tog"><span>Motion regions</span><input type="checkbox" id="showMot" checked></div>
+      <button id="btn-start" onclick="startDetection()">Start</button>
+      <button id="btn-stop"  onclick="stopDetection()">Stop</button>
+      <label>Send interval <span id="interval-val">200ms</span></label>
+      <input type="range" id="interval" min="100" max="1000" step="50" value="200"
+             oninput="document.getElementById('interval-val').textContent=this.value+'ms'">
     </div>
-
     <div class="panel">
-      <h2>People + Actions</h2>
-      <div id="plist"><div style="color:#334;font-size:.7rem">No people detected</div></div>
+      <h2>Persons</h2>
+      <div id="persons-list"><div style="color:#334;font-size:0.72rem">No persons detected</div></div>
     </div>
-
     <div class="panel">
-      <h2>Objects + Duration</h2>
-      <div id="olist"><div style="color:#334;font-size:.7rem">No objects yet</div></div>
+      <h2>Motion Regions</h2>
+      <div id="motion-list"><div style="color:#334;font-size:0.72rem">No motion</div></div>
     </div>
-
     <div class="panel">
-      <h2>Stats</h2>
-      <div class="sr"><span class="sl">Display FPS</span> <span class="sv" id="sfps">0</span></div>
-      <div class="sr"><span class="sl">Frames sent</span> <span class="sv" id="ssent">0</span></div>
-      <div class="sr"><span class="sl">People now</span>  <span class="sv" id="sppl">0</span></div>
-      <div class="sr"><span class="sl">Objects now</span> <span class="sv" id="sobj">0</span></div>
-      <div class="sr"><span class="sl">Motion</span>      <span class="sv" id="smot">0</span></div>
-      <div class="sr"><span class="sl">Session</span>     <span class="sv" id="stime">0s</span></div>
-      <div class="sr"><span class="sl">Latency</span>     <span class="sv" id="slat">-</span></div>
+      <h2>Session Stats</h2>
+      <div class="stat-row"><span class="stat-label">Frames sent</span><span class="stat-val" id="stat-frames">0</span></div>
+      <div class="stat-row"><span class="stat-label">Persons</span><span class="stat-val" id="stat-persons">0</span></div>
+      <div class="stat-row"><span class="stat-label">Motion</span><span class="stat-val" id="stat-motion">—</span></div>
+      <div class="stat-row"><span class="stat-label">Session</span><span class="stat-val" id="stat-elapsed">0s</span></div>
     </div>
   </div>
 </main>
 <script>
-const webcam=document.getElementById('webcam'),
-      cv=document.getElementById('cv'), co=document.getElementById('co'),
-      ctxV=cv.getContext('2d'), ctxO=co.getContext('2d'),
-      omsg=document.getElementById('omsg'), pill=document.getElementById('pill');
+const BONES = [[0,1],[0,2],[1,3],[2,4],[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+const ACTION_COLORS = {'standing':'#00ff9d','sitting':'#7799ff','walking':'#ffaa00','sleeping':'#cc88ff','using phone':'#ff4444','detecting...':'#445580','other':'#667788'};
+const PERSON_COLORS = ['#00e5ff','#ff6b35','#a8ff3e','#ff3ea8','#ffdd00','#3ea8ff'];
+let stream=null,running=false,frameCount=0,lastFpsTime=performance.now(),fpsFrames=0;
+let latestData={persons:[],motion_regions:[],motion_detected:false};
+const webcam=document.getElementById('webcam'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+const overlayMsg=document.getElementById('overlay-msg'),statusPill=document.getElementById('status-pill'),motionFlash=document.getElementById('motion-flash');
 
-let stream=null,running=false,sendMs=400,sendTimer=null,rafId=null,serverBusy=false;
-let sentCount=0,fpsCount=0,lastFpsT=performance.now();
-let boxes=[],events=[],persons=[],motions=[];
-
-// COCO skeleton pairs (indices into 17 keypoints)
-const SKEL=[[15,13],[13,11],[16,14],[14,12],[11,12],[5,11],[6,12],[5,6],[5,7],[6,8],[7,9],[8,10],[1,2],[0,1],[0,2],[1,3],[2,4]];
-const ACTION_COLORS={'standing':'#00ff9d','sitting':'#00e5ff','walking':'#ffcc00','using phone':'#ff66ff','sleeping':'#ff4444','other':'#aaaaaa','detecting…':'#666688'};
-
-function renderLoop(){
-  if(!running)return;
-  ctxV.drawImage(webcam,0,0,cv.width,cv.height);
-  ctxO.clearRect(0,0,co.width,co.height);
-
-  if(document.getElementById('showMot').checked)
-    motions.forEach(m=>drawMotion(ctxO,m));
-
-  boxes.forEach(b=>drawBox(ctxO,b));
-
-  if(document.getElementById('showSkel').checked)
-    persons.forEach(p=>drawPerson(ctxO,p));
-
-  fpsCount++;
-  const now=performance.now();
-  if(now-lastFpsT>=1000){document.getElementById('sfps').textContent=fpsCount;fpsCount=0;lastFpsT=now;}
-  rafId=requestAnimationFrame(renderLoop);
-}
-
-function startSendLoop(){sendTimer=setInterval(sendFrame,sendMs);}
-function updI(v){sendMs=v;if(sendTimer){clearInterval(sendTimer);startSendLoop();}}
-
-async function sendFrame(){
-  if(!running||serverBusy)return;
-  serverBusy=true;
-  const W=960,H=Math.round(640*cv.height/(cv.width||1));
-  const off=new OffscreenCanvas(W,H);
-  off.getContext('2d').drawImage(webcam,0,0,W,H);
-  const blob=await off.convertToBlob({type:'image/jpeg',quality:0.85});
-  const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(blob);});
-  const thr=parseFloat(document.getElementById('thr').value);
-  const t0=performance.now();
-  try{
-    const res=await fetch('/analyze/frame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64,threshold:thr})});
-    if(res.ok){
-      const data=await res.json();
-      const sx=cv.width/W, sy=cv.height/H;
-
-      // scale object boxes
-      boxes=(data.detections||[]).map(d=>({
-        x1:d.box[0]*sx,y1:d.box[1]*sy,x2:d.box[2]*sx,y2:d.box[3]*sy,
-        label:d.label_name,score:d.score,depth_z:d.depth_z,extrusion:d.extrusion,color:d.color
-      }));
-      events=data.action_events||[];
-
-      // scale person keypoints and bbox
-      persons=(data.persons||[]).map(p=>({
-        ...p,
-        bbox:[p.bbox[0]*sx,p.bbox[1]*sy,p.bbox[2]*sx,p.bbox[3]*sy],
-        keypoints:p.keypoints.map(([x,y])=>[x*sx,y*sy])
-      }));
-
-      motions=(data.motion_regions||[]).map(m=>({
-        x:m.x*sx,y:m.y*sy,w:m.w*sx,h:m.h*sy,area:m.area,cx:m.cx*sx,cy:m.cy*sy
-      }));
-
-      sentCount++;
-      document.getElementById('ssent').textContent=sentCount;
-      document.getElementById('slat').textContent=Math.round(performance.now()-t0)+'ms';
-      updateSidebar(data);
-    }
-  }catch(e){}
-  serverBusy=false;
-}
-
-// ── drawing ───────────────────────────────────────────────────────────────
-function drawPerson(ctx,p){
-  const kp=p.keypoints; // [[x,y], ...]
-  const col=ACTION_COLORS[p.action]||'#aaa';
-
-  // skeleton lines
-  ctx.strokeStyle=col;ctx.lineWidth=2;
-  SKEL.forEach(([a,b])=>{
-    if(!kp[a]||!kp[b])return;
-    const[ax,ay]=kp[a],[bx,by]=kp[b];
-    if(ax<1&&ay<1)return; // invisible
-    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
-  });
-
-  // keypoint dots
-  kp.forEach(([x,y])=>{
-    if(x<1&&y<1)return;
-    ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);
-    ctx.fillStyle=col;ctx.fill();
-  });
-
-  // action label above head
-  const[bx1,by1,bx2]=p.bbox;
-  const txt=`${p.action} ${(p.confidence*100).toFixed(0)}%  ${p.duration.toFixed(1)}s`;
-  ctx.font='bold 13px Courier New';
-  const tw=ctx.measureText(txt).width+10;
-  ctx.fillStyle=col==='#00ff9d'?'rgba(0,50,20,.85)':
-                col==='#00e5ff'?'rgba(0,30,50,.85)':
-                col==='#ff4444'?'rgba(50,10,10,.85)':'rgba(20,20,40,.85)';
-  ctx.fillRect(bx1,by1-24,tw,22);
-  ctx.fillStyle=col;
-  ctx.fillText(txt,bx1+5,by1-8);
-
-  // person bounding box
-  ctx.strokeStyle=col;ctx.lineWidth=1.5;
-  ctx.strokeRect(bx1,by1,bx2-bx1,p.bbox[3]-by1);
-}
-
-function drawBox(ctx,b){
-  const{x1,y1,x2,y2,label,score,depth_z,extrusion:ext,color:[r,g,bg]}=b;
-  const ev=events.find(e=>e.label===label&&e.state==='active');
-  const durStr=ev?` ${ev.duration.toFixed(1)}s`:'';
-
-  ctx.strokeStyle=`rgba(${r},${g},${bg},0.3)`;ctx.lineWidth=1;
-  ctx.strokeRect(x1-ext,y1-ext,x2-x1,y2-y1);
-  ctx.strokeStyle=`rgba(${r},${g},${bg},0.55)`;
-  [[x1,y1,x1-ext,y1-ext],[x2,y1,x2-ext,y1-ext],[x2,y2,x2-ext,y2-ext],[x1,y2,x1-ext,y2-ext]].forEach(([ax,ay,bx,by])=>{
-    ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.stroke();
-  });
-  ctx.strokeStyle=`rgb(${r},${g},${bg})`;ctx.lineWidth=2;
-  ctx.strokeRect(x1,y1,x2-x1,y2-y1);
-
-  const txt=`${label} ${(score*100).toFixed(0)}% Z:${depth_z.toFixed(2)}${durStr}`;
-  ctx.font='bold 11px Courier New';
-  const tw=ctx.measureText(txt).width+10;
-  ctx.fillStyle=`rgba(${r},${g},${bg},0.85)`;ctx.fillRect(x1,y1-20,tw,18);
-  ctx.fillStyle='#000';ctx.fillText(txt,x1+5,y1-6);
-}
-
-function drawMotion(ctx,m){
-  ctx.save();
-  ctx.strokeStyle='rgba(255,140,0,0.7)';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);
-  ctx.strokeRect(m.x,m.y,m.w,m.h);ctx.setLineDash([]);
-  ctx.fillStyle='rgba(255,140,0,0.65)';ctx.fillRect(m.x,m.y-15,52,14);
-  ctx.fillStyle='#000';ctx.font='10px Courier New';ctx.fillText('MOTION',m.x+3,m.y-4);
-  ctx.restore();
-}
-
-// ── sidebar ───────────────────────────────────────────────────────────────
-function updateSidebar(data){
-  // people + actions
-  const pEl=document.getElementById('plist');
-  const ppl=data.persons||[];
-  pEl.innerHTML=ppl.length===0
-    ?'<div style="color:#334;font-size:.7rem">No people detected</div>'
-    :ppl.map(p=>{
-      const col=ACTION_COLORS[p.action]||'#aaa';
-      return `<div class="person-row">
-        <div class="pname">Person ${p.track_id}</div>
-        <div class="paction" style="color:${col}">${p.action}</div>
-        <div class="pmeta">${(p.confidence*100).toFixed(0)}% confidence &nbsp;|&nbsp; ${p.duration.toFixed(1)}s active</div>
-      </div>`;
-    }).join('');
-
-  // objects + duration
-  const active=(data.action_events||[]).filter(e=>e.state==='active');
-  const oEl=document.getElementById('olist');
-  oEl.innerHTML=active.length===0
-    ?'<div style="color:#334;font-size:.7rem">No objects</div>'
-    :active.sort((a,b)=>b.duration-a.duration).map(e=>`
-      <div class="obj-row ${e.duration<1?'fresh':''}">
-        <span class="oname">${e.label}</span>
-        <span class="oz">Z:${e.depth_z.toFixed(2)}</span>
-        <span class="odur">${e.duration.toFixed(1)}s</span>
-      </div>`).join('');
-
-  document.getElementById('sppl').textContent=ppl.length;
-  document.getElementById('sobj').textContent=active.length;
-  document.getElementById('smot').textContent=(data.motion_regions||[]).length;
-  document.getElementById('stime').textContent=data.session_elapsed+'s';
-}
-
-// ── start / stop ──────────────────────────────────────────────────────────
-async function startD(){
+async function startDetection(){
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720}});
     webcam.srcObject=stream; await webcam.play();
-    cv.width=co.width=webcam.videoWidth||1280;
-    cv.height=co.height=webcam.videoHeight||720;
-    omsg.style.display='none';
+    canvas.width=webcam.videoWidth||1280; canvas.height=webcam.videoHeight||720;
+    overlayMsg.style.display='none';
     await fetch('/analyze/reset',{method:'POST'});
-    running=true; pill.textContent='LIVE'; pill.className='active';
-    document.getElementById('ss').classList.add('live');
-    rafId=requestAnimationFrame(renderLoop); startSendLoop();
-  }catch(e){
-    pill.textContent='CAM ERROR'; pill.className='error';
-    omsg.textContent='Camera access denied.';
-  }
+    running=true; statusPill.textContent='LIVE'; statusPill.className='active';
+    document.getElementById('btn-stop').classList.add('live');
+    sendLoop(); renderLoop();
+  }catch(e){ statusPill.textContent='CAM ERROR'; statusPill.className='error'; }
 }
-
-function stopD(){
+function stopDetection(){
   running=false;
-  if(sendTimer){clearInterval(sendTimer);sendTimer=null;}
-  if(rafId){cancelAnimationFrame(rafId);rafId=null;}
   if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
-  ctxV.clearRect(0,0,cv.width,cv.height); ctxO.clearRect(0,0,co.width,co.height);
-  boxes=[];events=[];persons=[];motions=[];
-  omsg.textContent='Press START to activate webcam'; omsg.style.display='block';
-  pill.textContent='OFFLINE'; pill.className='';
-  document.getElementById('ss').classList.remove('live');
-  document.getElementById('plist').innerHTML='<div style="color:#334;font-size:.7rem">No people detected</div>';
-  document.getElementById('olist').innerHTML='<div style="color:#334;font-size:.7rem">No objects yet</div>';
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  overlayMsg.textContent='Press START to activate webcam'; overlayMsg.style.display='block';
+  statusPill.textContent='OFFLINE'; statusPill.className='';
+  document.getElementById('btn-stop').classList.remove('live');
+}
+function renderLoop(){
+  if(!running)return;
+  ctx.drawImage(webcam,0,0,canvas.width,canvas.height);
+  drawOverlays(latestData);
+  requestAnimationFrame(renderLoop);
+}
+async function sendLoop(){
+  if(!running)return;
+  const interval=parseInt(document.getElementById('interval').value);
+  try{
+    const off=new OffscreenCanvas(canvas.width,canvas.height);
+    off.getContext('2d').drawImage(webcam,0,0);
+    const blob=await off.convertToBlob({type:'image/jpeg',quality:0.8});
+    const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(blob);});
+    const resp=await fetch('/analyze/frame',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64})});
+    if(resp.ok){const d=await resp.json();latestData=d;updateSidebar(d);}
+  }catch(e){}
+  frameCount++; fpsFrames++;
+  const now=performance.now();
+  if(now-lastFpsTime>1000){document.getElementById('fps-counter').textContent=fpsFrames+' fps';fpsFrames=0;lastFpsTime=now;}
+  document.getElementById('stat-frames').textContent=frameCount;
+  setTimeout(sendLoop,interval);
+}
+function drawOverlays(data){
+  const persons=data.persons||[], regions=data.motion_regions||[];
+  regions.forEach(r=>{
+    ctx.save(); ctx.setLineDash([5,4]); ctx.strokeStyle='rgba(255,100,0,0.65)'; ctx.lineWidth=1.5;
+    ctx.strokeRect(r.x,r.y,r.w,r.h); ctx.restore();
+  });
+  persons.forEach((p,i)=>{
+    if(!p.bbox||p.bbox.length<4)return;
+    const[x1,y1,x2,y2]=p.bbox;
+    const color=PERSON_COLORS[i%PERSON_COLORS.length];
+    const action=(p.action||'detecting...').toLowerCase();
+    const aColor=ACTION_COLORS[action]||'#aabbcc';
+    ctx.strokeStyle=p.motion?'#ff6600':color; ctx.lineWidth=2;
+    ctx.strokeRect(x1,y1,x2-x1,y2-y1);
+    const kps=p.keypoints||[];
+    if(kps.length===17){
+      BONES.forEach(([a,b])=>{
+        if(kps[a]&&kps[b]){ctx.beginPath();ctx.moveTo(kps[a][0],kps[a][1]);ctx.lineTo(kps[b][0],kps[b][1]);ctx.strokeStyle=color+'99';ctx.lineWidth=2;ctx.stroke();}
+      });
+      kps.forEach(([kx,ky])=>{ctx.beginPath();ctx.arc(kx,ky,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();});
+    }
+    const name=p.name||('Person '+p.track_id);
+    const dur=p.duration?p.duration.toFixed(1)+'s':'';
+    const full=`${name} · ${action}${p.motion?' ⚡':''}  ${dur}`;
+    ctx.font='bold 12px Courier New';
+    const tw=ctx.measureText(full).width+10;
+    const ty=Math.max(y1-22,4);
+    ctx.fillStyle='rgba(8,8,18,0.82)'; ctx.fillRect(x1,ty,tw,20);
+    ctx.fillStyle=aColor; ctx.fillText(full,x1+5,ty+14);
+    const cw=(p.confidence||0)*(x2-x1);
+    ctx.fillStyle=aColor+'44'; ctx.fillRect(x1,y1,cw,3);
+  });
+  motionFlash.classList.toggle('active',data.motion_detected===true);
+}
+function updateSidebar(data){
+  const persons=data.persons||[], regions=data.motion_regions||[];
+  const pList=document.getElementById('persons-list');
+  pList.innerHTML=persons.length===0?'<div style="color:#334;font-size:0.72rem">No persons detected</div>':
+    persons.map((p,i)=>{
+      const action=(p.action||'detecting...').toLowerCase();
+      const cls=action.replace(/ /g,'-').replace(/\./g,'');
+      const conf=Math.round((p.confidence||0)*100);
+      const color=PERSON_COLORS[i%PERSON_COLORS.length];
+      return `<div class="person-card ${p.motion?'moving':''}">
+        <div class="person-header">
+          <span class="person-name" style="color:${color}">${p.name||'Person '+p.track_id}</span>
+          <span class="person-dur">${p.duration?p.duration.toFixed(1)+'s':''}</span>
+        </div>
+        <span class="action-badge action-${cls}">${action}</span>
+        ${p.motion?'<div class="motion-tag">⚡ moving</div>':''}
+        <div class="conf-bar-wrap"><div class="conf-bar" style="width:${conf}%"></div></div>
+      </div>`;
+    }).join('');
+  const mList=document.getElementById('motion-list');
+  mList.innerHTML=regions.length===0?'<div style="color:#334;font-size:0.72rem">No motion</div>':
+    regions.map(r=>`<div class="motion-row">area <span>${r.area}</span>px² @ <span>(${r.cx},${r.cy})</span>${r.person_id!=null?' → Person <span>'+r.person_id+'</span>':''}</div>`).join('');
+  document.getElementById('stat-persons').textContent=persons.length;
+  document.getElementById('stat-motion').textContent=data.motion_detected?'⚡ YES':'none';
+  document.getElementById('stat-elapsed').textContent=(data.session_elapsed||0)+'s';
 }
 </script>
 </body>
